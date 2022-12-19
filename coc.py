@@ -115,7 +115,7 @@ def createcoc(fname):
     ptext = '<font size=12>To</font>'
     to_P = Paragraph(ptext, styles["RIGHT"])
     to_address_parts = ["GALLEGOS, RAY", "1711 SILVER MOUNTAIN DR", "SAN ANTONIO, TX 78264", "(210)-262-6209"]
-    # Create
+
     to_address = []
     for part in to_address_parts:
         ptext = '<font size=10>%s</font>' % part
@@ -171,31 +171,7 @@ def createcoc(fname):
     header_row = [[' Claim\nItem #', 'Description of Service', 'Amt \n Billed to \n Insurance', 'Insurance\nAdjustment','Insurance\nPayment to\n Agency','Patient\'s\nResponsible\nAmount'],
             ]
 
-    #
-    # lista = header_row + claims_df.values.tolist()
-    #
-    # t_style = TableStyle([('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
-    #                       ('TEXTCOLOR', (1, 1), (-2, -1), colors.black),
-    #                       ('VALIGN', (0, 0), (0, -1), 'BOTTOM'),
-    #                       ('ALIGN', (0, 0), (0, -1), 'CENTER'),
-    #                       ('ALIGN', (0, 0), (-1, 0), 'RIGHT'),
-    #                       ('TEXTCOLOR', (0, 0), (0, -1), colors.black),
-    #                       ('ALIGN', (1, -1), (-1, -1), 'RIGHT'),
-    #                       ('VALIGN', (0, -1), (-1, -1), 'MIDDLE'),
-    #                       ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
-    #                       ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-    #                       ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.85, 0.86, 0.8)),
-    #
-    #                       ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.lightgrey),
-    #                       ('BOX', (0, 0), (-1, -1), 0.25, colors.lightgrey),
-    #                       ])
-    # s = getSampleStyleSheet()
-    #s = s["BodyText"]
-    #s.wordWrap = 'CJK'
-    #t = Table(lista, colWidths=[0.6 * inch, 2.7 * inch, 1 * inch, 1 * inch,1* inch,1.3* inch,], repeatRows=1)
-    #t.setStyle(t_style)
 
-   # Story.append(t)
     doc.build(Story)
 
 
