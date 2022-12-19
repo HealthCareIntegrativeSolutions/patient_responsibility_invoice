@@ -1,10 +1,12 @@
 import numpy as np
 
+
 def formatter_currency(x):
     if np.isnan(x):
         return x
-    else :
+    else:
         return "${:,.0f}".format(x)
+
 
 # if x >= 0 else "(${:,.0f})".format(abs(x))
 
