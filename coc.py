@@ -1,209 +1,306 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
+from datetime import datetime
 from functools import partial
 
+import pytz
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm, inch
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from reportlab.platypus.flowables import Image
+from reportlab.platypus.flowables import BalancedColumns, Flowable, Image, PageBreak, Spacer
 
-styles = getSampleStyleSheet()
-styleN = styles["Normal"]
-styleH = styles["Heading1"]
-
-styles.add(ParagraphStyle(name="Justify", alignment=TA_JUSTIFY))
-styles.add(ParagraphStyle(name="RIGHT", alignment=TA_RIGHT))
-styles.add(ParagraphStyle(name="LEFT", alignment=TA_LEFT))
+TIMEZONE_CST = pytz.timezone("US/Central")
+TIMESTAMP_FORMAT_STRING = "%Y-%m-%d %H:%M:%S"
+TIMESTAMP_FORMAT_FILENAME = "%Y%m%d%H%M%S"
+DATESTAMP_FORMAT_STRING = "%Y-%m-%d"
+DATESTAMP_FORMAT_LETTER = "%A, %B %d, %Y"
 
 
-def footer(canvas, doc):
-    canvas.saveState()
-    P = Paragraph("This is a multi-line footer.  It goes on every page.  " * 5, styleN)
-    w, h = P.wrap(doc.width, doc.bottomMargin)
-    P.drawOn(canvas, doc.leftMargin, h)
-    canvas.restoreState()
+class InteractiveTextField(Flowable):
+    def __init__(self, text="A Text", value="", width=210):
+        Flowable.__init__(self)
+        self.text = text
+        self.value = value
+        self.width = width
+        self.height = 20
+
+    def draw(self):
+        self.canv.saveState()
+        form = self.canv.acroForm
+        form.textfield(
+            value=self.value,
+            name=self.text,
+            tooltip=self.text,
+            width=self.width,
+            height=self.height,
+            fontSize=10,
+            borderWidth=0.2,
+            borderStyle="solid",
+            borderColor=colors.grey,
+            fillColor=colors.HexColor("#eeeeee"),
+            relative=True,
+            fieldFlags="richText",
+        )
+        self.canv.restoreState()
+        return
 
 
-def header(canvas, doc, content):
-    canvas.saveState()
-    w, h = content.wrap(doc.width, doc.topMargin)
-    content.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin - h)
-    canvas.restoreState()
+class InteractiveCheckBox(Flowable):
+    def __init__(self, text="A Box", checked=False):
+        Flowable.__init__(self)
+        self.text = text
+        self.checked = checked
+        self.boxsize = 20
+
+    def draw(self):
+        self.canv.saveState()
+        form = self.canv.acroForm
+        form.checkbox(
+            checked=self.checked,
+            name=self.text,
+            tooltip=self.text,
+            buttonStyle="cross",
+            size=self.boxsize,
+            borderWidth=0.2,
+            borderStyle="solid",
+            borderColor=colors.grey,
+            fillColor=colors.HexColor("#eeeeee"),
+            relative=True,
+        )
+        self.canv.restoreState()
+        return
 
 
-def header_footer(canvas, doc, header, footer):
-    canvas.saveState()
-    w, h = header.wrap(doc.width, doc.topMargin)
-    header.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin - h)
-
-    w, h = footer.wrap(doc.width, doc.bottomMargin)
-    footer.drawOn(canvas, doc.leftMargin, h)
-    canvas.restoreState()
-
-
-def createdoc():
-
-    doc = BaseDocTemplate("test.pdf", pagesize=letter)
-    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="normal")
-    template = PageTemplate(id="test", frames=frame, onPage=footer)
-    doc.addPageTemplates([template])
-
-    text = []
-    for i in range(111):
-        text.append(Paragraph("This is line %d." % i, styleN))
-    doc.build(text)
+def smart_split(text, join_token="<br/>"):
+    text_tokens = text.split(" ")
+    split_index = int(len(text_tokens) / 2)
+    first_part = " ".join(text_tokens[:split_index])
+    second_part = " ".join(text_tokens[split_index:])
+    text = f"{first_part}<br/>{second_part}"
+    return text
 
 
-def create_header(invoice_number, styles):
-    logo = "C:/Users/nagas/OneDrive/Documents/Sankrithi Consulting/HNT_HIS/Projects/Vivify Implementation/Brochure/Modified_Logos/Logos/hnts-logo/PNG/hnts-logo.png"
-    im = Image(logo, 2 * inch, 0.75 * inch)
-    im.hAlign = "RIGHT"
+def create_coc():
+    sign_off_name = "Rachel Woolard"
+    text_fields = {
+        "Patient": "NNNN, NNNN",
+        "Date of Birth": "01/01/2000",
+        "Referring Physician": "MMMM, MMMM",
+        "Primary Care Physician": "PPPP, PPPP",
+        "Hospitalization Dates": "12/25/2023 - 12/31/2023",
+        "Episode Dates": "01/01/2024 - 03/01/2024",
+        "Hospitalization Reason": "ZZZZ ZZZZ ZZZZ ZZZZ",
+    }
+    checkbox_fields = {
+        "Skilled Nursing": True,
+        "Physical Therapy": True,
+        "Occupational Therapy": False,
+        "Speech Therapy": False,
+        "Medical Social Work": False,
+    }
 
-    from_address_parts = [
-        "Home Nursing & Therapy Services",
-        "2018 Avenue B, Suite 200",
-        "San Antonio, TX 78215",
-        "Ph: (210)-822-8807 Ext. 1009",
-        "Fax: (210)-822-8863",
-        "email: accounting@hnts.org",
-        "Attn: Pernetter Christian",
-    ]
-    full_address = []
-    for part in from_address_parts:
-        ptext = "<font size=10>%s</font>" % part.strip()
-        full_address.append(Paragraph(ptext, styles["LEFT"]))
+    current_timestamp = datetime.now(tz=TIMEZONE_CST).replace(microsecond=0)
+    current_timestamp_filename = current_timestamp.strftime(TIMESTAMP_FORMAT_FILENAME)
+    current_datestamp_letter = current_timestamp.strftime(DATESTAMP_FORMAT_LETTER)
+    filename = f"coc.pdf"
 
-    headerdata = [[" ", full_address, invoice_number, [im], ""]]
-    h = Table(headerdata, [0.4 * inch, 2.5 * inch, 3 * inch, 2 * inch, 0.2 * inch])
-    return h
+    styles = getSampleStyleSheet()
 
-
-def createdoc2():
-    doc = BaseDocTemplate("test2.pdf", pagesize=letter)
-    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height - 2 * cm, id="normal")
-    header_content = Paragraph("This is a multi-line header.  It goes on every page.  " * 8, styleN)
-    footer_content = Paragraph("This is a multi-line footer.  It goes on every page.  " * 5, styleN)
-    template = PageTemplate(
-        id="test",
-        frames=frame,
-        onPage=partial(header_footer, header=header_content, footer=footer_content),
+    doc = SimpleDocTemplate(
+        filename,
+        pagesize=letter,
+        rightMargin=0.8 * inch,
+        leftMargin=0.8 * inch,
+        topMargin=0.8 * inch,
+        bottomMargin=0.8 * inch,
+        # showBoundary=True,
     )
-    doc.addPageTemplates([template])
 
-    text = []
-    for i in range(111):
-        text.append(Paragraph("This is line %d." % i, styleN))
-    doc.build(text)
+    table_text_data = []
+    table_text_colWidths = [6.7 * inch / 2] * 2
+    table_text_style = [
+        ("LEFTPADDING", (0, 0), (-1, -1), 0 * inch),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0 * inch),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0.1 * inch),
+        ("BOTTOMPADDING", (0, -1), (-1, -1), 0 * inch),
+        ("TOPPADDING", (0, 0), (-1, -1), 0 * inch),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        # ("GRID", (0, 0), (-1, -1), 0.5, colors.palegreen),
+        ("SPAN", (0, -1), (-1, -1)),
+    ]
+    table_text_counter = 0
+    table_text_row_counter = 0
+    table_text_row_cell_counter = 0
+    for label in text_fields.keys():
+        width = 6.7 * inch / 2 - 0.1 * inch
+        if table_text_row_cell_counter == 0 and table_text_counter + 1 == len(text_fields):
+            width = 6.7 * inch - 0.1 * inch
 
+        if table_text_row_cell_counter == 0:
+            table_text_data.append([])
+            table_text_data[table_text_row_counter].append(
+                [
+                    Paragraph(text=label, style=styles["BodyText"]),
+                    InteractiveTextField(text=label, value=text_fields[label], width=width),
+                ]
+            )
+            table_text_row_cell_counter += 1
+        elif table_text_row_cell_counter == 1:
+            table_text_data[table_text_row_counter].append(
+                [
+                    Paragraph(text=label, style=styles["BodyText"]),
+                    InteractiveTextField(text=label, value=text_fields[label], width=width),
+                ]
+            )
+            table_text_row_counter += 1
+            table_text_row_cell_counter = 0
+        table_text_counter += 1
 
-def createcoc(fname):
-    # #doc = SimpleDocTemplate(fname, pagesize=letter,
-    #                         rightMargin=50, leftMargin=20,
-    #                         topMargin=20, bottomMargin=10)
-
-    doc = BaseDocTemplate(fname, pagesize=letter, rightMargin=50, leftMargin=20, topMargin=40, bottomMargin=10)
-    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height - 2.5 * cm, id="normal")
-    invoicenum = "TEST-01"
-    header_content = create_header(invoicenum, styles)
-    footer_content = Paragraph("THANK YOU FOR YOUR BUSINESS!", styles["Justify"])
-    # footer_content.append(Paragraph("For payment arrangements Contact Pernetter Christian at 210-822-8807 # 1009", styles['Justify']))
-    template = PageTemplate(
-        id="test",
-        frames=frame,
-        onPage=partial(header_footer, header=header_content, footer=footer_content),
+    table_text_fields = Table(
+        data=table_text_data,
+        colWidths=table_text_colWidths,
+        style=TableStyle(table_text_style),
     )
-    doc.addPageTemplates([template])
-    Story = []
-    Story.append(Spacer(1, 12))
-    # Recipient's address
-    ptext = "<font size=12>To</font>"
-    to_P = Paragraph(ptext, styles["RIGHT"])
-    to_address_parts = [
-        "GALLEGOS, RAY",
-        "1711 SILVER MOUNTAIN DR",
-        "SAN ANTONIO, TX 78264",
-        "(210)-262-6209",
+
+    table_checkbox_data = []
+    table_checkbox_colWidths = []
+    table_checkbox_style = [
+        ("LEFTPADDING", (0, 0), (-1, -1), 0 * inch),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0 * inch),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0 * inch),
+        ("TOPPADDING", (0, 0), (-1, -1), 0 * inch),
+        ("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        # ("GRID", (0, 0), (-1, -1), 0.5, colors.palegreen),
     ]
+    for label in checkbox_fields.keys():
+        table_checkbox_data.append(InteractiveCheckBox(text=label, checked=checkbox_fields[label]))
+        table_checkbox_data.append(Paragraph(text=smart_split(label), style=styles["Normal"]))
+        overall_width = (6.7 * inch) / len(checkbox_fields)
+        table_checkbox_colWidths.append(0.25 * overall_width)
+        table_checkbox_colWidths.append(0.75 * overall_width)
 
-    to_address = []
-    for part in to_address_parts:
-        ptext = "<font size=10>%s</font>" % part
-        to_address.append(Paragraph(ptext, styles["LEFT"]))
-    insurance_info = ["SAIKIRAN", "KADIYALA"]
-    insurance_text = []
-    for part in insurance_info:
-        ptext = "<font size=10>%s</font>" % part
-        insurance_text.append(Paragraph(ptext, styles["RIGHT"]))
-
-    to_data = [
-        [to_P, "", ""],
-        ["", to_address, insurance_text],
-    ]
-    to_T = Table(to_data, [1.0 * inch, 3 * inch, 4.5 * inch])
-    Story.append(to_T)
-
-    name_parts = to_address_parts[0].split(",")
-    full_name = name_parts[1].strip() + " " + name_parts[0].strip()
-    Story.append(Spacer(1, 20))
-    ptext = "<font size=12>Dear %s:</font>" % full_name.title()
-    Story.append(Paragraph(ptext, styles["Normal"]))
-    Story.append(Spacer(1, 20))
-
-    ptext = (
-        '<font size=12>Thank you for trusting HNTS to provide you with home healthcare services.  You should have received an "Explanation of Benefits" from your insurance carrier regarding your claims.'
-        " This invoice is for the patient's responsibility for the services rendered by HNTS.</font>"
+    table_checkbox_fields = Table(
+        data=[table_checkbox_data],
+        colWidths=table_checkbox_colWidths,
+        style=TableStyle(table_checkbox_style),
     )
-    Story.append(Paragraph(ptext, styles["Justify"]))
 
-    Story.append(Spacer(1, 20))
-    ptext = "<font size=12>Check or Money order payable to:</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    ptext = "<font size=12>Home Nursing & Therapy Services</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    ptext = "<font size=12>Attn: Accounts Payable</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    ptext = "<font size=12>2018 Avenue B, Ste. 200</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    ptext = "<font size=12>San Antonio, TX 78215</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    Story.append(Spacer(1, 20))
-    ptext = "<font size=12>Credit Card payment:</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    ptext = "<font size=12>Email accounting@hnts.org for an invoice to be emailed directly to you for secure online payment.</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    Story.append(Spacer(1, 20))
-    ptext = "<font size=12>Questions/ Payment arrangements :</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-    ptext = "<font size=12>Contact Pernetter Christian at accounting@hnts.org or 210-822-8807 #1009</font>"
-    Story.append(Paragraph(ptext, styles["Justify"]))
-
-    Story.append(Spacer(1, 20))
-
-    header_row = [
-        [
-            " Claim\nItem #",
-            "Description of Service",
-            "Amt \n Billed to \n Insurance",
-            "Insurance\nAdjustment",
-            "Insurance\nPayment to\n Agency",
-            "Patient's\nResponsible\nAmount",
-        ],
+    story = [
+        Table(
+            data=[
+                [
+                    Paragraph(
+                        text="""
+                        Home Nursing & Therapy Services
+                        <br/>2018 Avenue B, Suite 200
+                        <br/>San Antonio, TX 78215
+                        <br/>Phone: (210) 822-8807 Ext. 1009
+                        <br/>Fax: (210) 822-8863
+                        <br/>Email: accounting@hnts.org
+                        <br/>Attn: Pernetter Christian
+                        """,
+                        style=styles["Normal"],
+                    ),
+                    Image(
+                        filename="Logos/hnts-logo/PNG/hnts-logo.png",
+                        width=2.5 * inch,
+                        height=0.9375 * inch,
+                        hAlign="RIGHT",
+                    ),
+                ],
+                [
+                    Paragraph(text=current_datestamp_letter, style=styles["Normal"]),
+                ],
+                [
+                    Paragraph(text="Coordination of Care Letter", style=styles["Heading2"]),
+                ],
+                [
+                    Paragraph(
+                        text="""
+                        This letter is to inform that the following patient has been admitted to 
+                        Home Nursing and Therapy Services for Home Health Care services for the 
+                        mentioned episode dates. The initial 485 will be signed by the referring 
+                        physician mentioned below. The patient has identified the below mentioned PCP 
+                        for subsequent orders and follow up regarding their medical care.
+                        """,
+                        style=styles["Normal"],
+                    )
+                ],
+                [
+                    table_text_fields,
+                ],
+                [
+                    Paragraph(
+                        text="""
+                        After the initial evaluation, we have determined that the following services 
+                        will be provided during the certification period.
+                        """,
+                        style=styles["Normal"],
+                    )
+                ],
+                [
+                    table_checkbox_fields,
+                ],
+                [
+                    Paragraph(
+                        text="""
+                        HNTS may contact/receive from your office orders as needed for patient care. 
+                        If you have any request(s) for additional information or orders, please notify 
+                        us at:  
+                        """,
+                        style=styles["Normal"],
+                    )
+                ],
+                [
+                    Paragraph(
+                        text="""
+                        Phone: (210) 822-8807 
+                        <br/>Fax: (210) 822-8863
+                        """,
+                        style=styles["Normal"],
+                    )
+                ],
+                [
+                    Paragraph(
+                        text="""
+                        Thank you,
+                        """,
+                        style=styles["Normal"],
+                    )
+                ],
+                [
+                    Paragraph(
+                        text=f"""
+                        <b>{sign_off_name}</b>
+                        <br/>Case Manager
+                        <br/>Home Nursing and Therapy Services
+                        """,
+                        style=styles["Normal"],
+                    )
+                ],
+            ],
+            colWidths=[3.4 * inch, 3.4 * inch],
+            hAlign="LEFT",
+            style=TableStyle(
+                [
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0.05 * inch),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0.05 * inch),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0.07 * inch),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0.07 * inch),
+                    ("VALIGN", (0, 0), (1, 1), "TOP"),
+                    ("ALIGN", (0, 0), (0, 1), "LEFT"),
+                    ("ALIGN", (-1, 0), (-1, 1), "RIGHT"),
+                    # ("GRID", (0, 0), (-1, -1), 0.5, colors.palegreen),
+                ]
+                + [("SPAN", (0, r), (-1, r)) for r in range(2, 11)]
+            ),
+        ),
     ]
 
-    doc.build(Story)
+    doc.build(story)
 
 
-if __name__ == "__main__":
-    from time import gmtime, strftime
-
-    # using simple format of showing time
-    s = strftime("%a, %d %b %Y", gmtime())
-
-    createcoc("Saikiran_test" + str(s) + ".pdf")
+create_coc()

@@ -1,2 +1,4 @@
 black
+apply==1.6
+pytz==2022.7
 reportlab==3.6.12
