@@ -1,14 +1,12 @@
 from datetime import datetime
-from functools import partial
 
 import pytz
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm, inch
-from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from reportlab.platypus.flowables import BalancedColumns, Flowable, Image, PageBreak, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus.flowables import Flowable, Image
 
 TIMEZONE_CST = pytz.timezone("US/Central")
 TIMESTAMP_FORMAT_STRING = "%Y-%m-%d %H:%M:%S"
