@@ -67,7 +67,7 @@ def createdoc():
 
 
 def create_header(invoice_number, styles):
-    logo = "C:/Users/nagas/OneDrive/Documents/Sankrithi Consulting/HNT_HIS/Projects/Vivify Implementation/Brochure/Modified_Logos/Logos/hnts-logo/PNG/hnts-logo.png"
+    logo = "C:/Users/nagas/OneDrive/Documents/Sankrithi Consulting/HNT_HIS/Projects/Vivify Implementation/Brochure/Modified_logos/logos/hnts-logo/PNG/hnts-logo.png"
     im = Image(logo, 2 * inch, 0.75 * inch)
     im.hAlign = "RIGHT"
 

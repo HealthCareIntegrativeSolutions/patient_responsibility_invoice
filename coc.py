@@ -203,7 +203,7 @@ def create_coc():
                         style=styles["Normal"],
                     ),
                     Image(
-                        filename="Logos/hnts-logo/PNG/hnts-logo.png",
+                        filename="logos/hnts-logo/PNG/hnts-logo.png",
                         width=2.5 * inch,
                         height=0.9375 * inch,
                         hAlign="RIGHT",

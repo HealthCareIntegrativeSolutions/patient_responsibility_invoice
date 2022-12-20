@@ -17,7 +17,7 @@ DATESTAMP_FORMAT_STRING = "%Y-%m-%d"
 
 
 def create_header(invoice_number, styles):
-    logo = "Logos/hnts-logo/PNG/hnts-logo.png"
+    logo = "logos/hnts-logo/PNG/hnts-logo.png"
     im = Image(logo, 2 * inch, 0.75 * inch)
     im.hAlign = "RIGHT"
 

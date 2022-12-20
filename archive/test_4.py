@@ -162,7 +162,7 @@ def createpdf(filehandle, content):
     # story.append(logo)
     # story.append(Spacer(0 * cm, 1.5 * cm))
 
-    im = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Logos/AXXESS.png")
+    im = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logos/AXXESS.png")
     logo = Image(im)
     logo.drawHeight = 6 * cm * logo.drawHeight / logo.drawWidth
     logo.drawWidth = 6 * cm
